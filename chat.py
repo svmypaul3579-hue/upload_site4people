@@ -9,6 +9,15 @@ API_ID = 30962930
 API_HASH = 'd8ec5c8c5758bcb1f59d7c657a185a6f'
 SESSION_NAME = 'user_session'
 
+
+def _trim_caption(caption: str | None, max_chars: int = 1024) -> str:
+    text = (caption or "").strip()
+    if len(text) <= max_chars:
+        return text
+    trimmed = text[: max_chars - 3].rstrip()
+    return f"{trimmed}..."
+
+
 async def send_file_to_number(client: TelegramClient, phone_number: str, file_path: str | None, caption: str = ""):
     # Step 1: Format phone number (must include country code, e.g., '+1234567890')
     formatted_number = phone_number.strip().replace(" ", "")
@@ -37,15 +46,17 @@ async def send_file_to_number(client: TelegramClient, phone_number: str, file_pa
             print(f"Error: File '{file_path}' not found.")
             return
 
+        safe_caption = _trim_caption(caption)
         await client.send_file(
             entity=target_user,
             file=file_path,
-            caption=caption
+            caption=safe_caption
         )
         print(f"Attachment successfully sent to {formatted_number}")
         return
 
-    await client.send_message(entity=target_user, message=caption)
+    safe_message = _trim_caption(caption, max_chars=4096)
+    await client.send_message(entity=target_user, message=safe_message)
     print(f"Message successfully sent to {formatted_number}")
 
 async def _send_message(phone_number: str, message: str, file_path: str | None = None):
