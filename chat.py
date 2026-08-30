@@ -1,3 +1,4 @@
+import asyncio
 import os
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ImportContactsRequest
@@ -8,7 +9,7 @@ API_ID = 30962930
 API_HASH = 'd8ec5c8c5758bcb1f59d7c657a185a6f'
 SESSION_NAME = 'user_session'
 
-async def send_file_to_number(client: TelegramClient, phone_number: str, file_path: str, caption: str = ""):
+async def send_file_to_number(client: TelegramClient, phone_number: str, file_path: str | None, caption: str = ""):
     # Step 1: Format phone number (must include country code, e.g., '+1234567890')
     formatted_number = phone_number.strip().replace(" ", "")
     if not formatted_number.startswith("+"):
@@ -21,35 +22,39 @@ async def send_file_to_number(client: TelegramClient, phone_number: str, file_pa
         first_name="Contact",
         last_name=""
     )
-    
+
     result = await client(ImportContactsRequest([contact]))
-    
+
     if not result.users:
         print(f"Failed to find a Telegram user associated with {phone_number}.")
         return
 
     target_user = result.users[0]
 
-    # Step 3: Send the attachment
-    if not os.path.exists(file_path):
-        print(f"Error: File '{file_path}' not found.")
+    # Step 3: Send the attachment or plain text message
+    if file_path:
+        if not os.path.exists(file_path):
+            print(f"Error: File '{file_path}' not found.")
+            return
+
+        await client.send_file(
+            entity=target_user,
+            file=file_path,
+            caption=caption
+        )
+        print(f"Attachment successfully sent to {formatted_number}")
         return
 
-    await client.send_file(
-        entity=target_user,
-        file=file_path,
-        caption=caption
-    )
-    print(f"Attachment successfully sent to {formatted_number}")
+    await client.send_message(entity=target_user, message=caption)
+    print(f"Message successfully sent to {formatted_number}")
 
-async def send_message(phone_number: str, message: str, file_path: str = None):
+async def _send_message(phone_number: str, message: str, file_path: str | None = None):
     async with TelegramClient(SESSION_NAME, API_ID, API_HASH) as client:
-        # Example target details
-        # phone_to_message = "+917679735335"  # Include country code
-        # attachment_path = "selenium_error_1788080085.png"  # Image, video, document, etc.
-        # message_caption = "Here is the requested document."
-
         await send_file_to_number(client, phone_number, file_path, message)
+
+
+def send_message(phone_number: str, message: str, file_path: str | None = None):
+    asyncio.run(_send_message(phone_number, message, file_path))
 # from telethon import TelegramClient
 
 # API_ID = 1234567 
