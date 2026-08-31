@@ -39,7 +39,7 @@ def fill(driver, id, value):
     element.send_keys(value)
 
 
-# username = "userxnetest"
+# username = "usesdrxnetest"
 # password = "Asdghjkl@2026"
 
 # first_name = "Raghu"
@@ -97,7 +97,7 @@ def register_user(driver, username, password, first_name, last_name, dof):
     time.sleep(5)
     wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
     ## Next page
-
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     skip_tag = driver.find_element(By.XPATH, '//*[@id="contnet"]/div/div[2]/div/div[3]/small')
     skip_tag.click()
     
@@ -111,7 +111,7 @@ def register_user(driver, username, password, first_name, last_name, dof):
     # select contry
     Select(driver.find_element(By.ID, "country")).select_by_value('99')
 
-
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     # click employeer
 
     driver.find_element(By.ID, 'employer-enabled').click()
@@ -122,6 +122,7 @@ def register_user(driver, username, password, first_name, last_name, dof):
     
     time.sleep(5)
     ## Next (Final)
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     try:
         driver.find_element(By.XPATH, "//button[contains(text(),'Finish')]").click()
     except:
