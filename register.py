@@ -6,6 +6,7 @@ Created on Mon Aug  3 01:00:12 2026
 """
 
 import time
+import logs
 
 # pyrefly: ignore [missing-import]
 from selenium import webdriver
@@ -39,11 +40,11 @@ def fill(driver, id, value):
     element.send_keys(value)
 
 
-# username = "usesdrxnetest"
-# password = "Asdghjkl@2026"
+# username = "prashantsingh_jat22"
+# password = "prashantsingh_jat22@2026"
 
-# first_name = "Raghu"
-# last_name = "Bearach"
+# first_name = "Prashant"
+# last_name = "Singh Jat"
 # dof = "11-12-2000"
 
 # driver = webdriver.Chrome()
@@ -83,6 +84,7 @@ def register_user(driver, username, password, first_name, last_name, dof):
         time.sleep(5)
         
         try:
+            wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
             result_text = driver.find_element(By.XPATH, '//*[@id="register"]/div[1]').text
             
             if "This e-mail is already in use" in result_text:
@@ -126,9 +128,9 @@ def register_user(driver, username, password, first_name, last_name, dof):
     try:
         driver.find_element(By.XPATH, "//button[contains(text(),'Finish')]").click()
     except:
-        print("Finish button not found. Registration may not have completed successfully.")
+        logs.warning("Finish button not found. Registration may not have completed successfully.")
         
     
-    
+    driver.execute_script("window.scrollBy(0, 100);")
 
 # register_user(driver, username, password, first_name, last_name, dof)

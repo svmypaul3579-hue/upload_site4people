@@ -1,5 +1,7 @@
 
+from concurrent.futures import wait
 import time
+import logs
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -57,7 +59,7 @@ def wait_for_page_load(driver, timeout=30):
         return True
 
     except Exception as e:
-        print(f"Page load check failed: {e}")
+        logs.error(f"Page load check failed: {e}")
         return False
 
 def adjust_page_name(page_title):
@@ -73,7 +75,7 @@ def adjust_page_name(page_title):
 
     return page_name
 
-# page_title = "Statistical Professor"
+# page_title = "Statistical Professor career"
 # page_name = page_title.lower().replace(' ', '_')
 # page_category = "Education"
 # page_description = "we are hiring Statistical Professor. hurry up"
@@ -99,21 +101,24 @@ def create_page(driver, page_title, page_category, page_description):
         fill(driver, 'page_description', page_description)
 
         ## submit button
-        
+        time.sleep(5)  # Wait for a second before submitting
+        driver.execute_script("window.scrollBy(0, 150);")
         driver.find_element(By.XPATH, '//*[@id="contnet"]/div/div/div[2]/div[2]/form/div[6]/button').click()
         
-        time.sleep(5)  # Wait for the page to process the submission
+        time.sleep(15)  # Wait for the page to process the submission
+
+        wait_for_page_load(driver)
         try:
             alert_text = driver.find_element(By.XPATH, '//*[@id="contnet"]/div/div/div[2]/div[2]/form/div[5]/div').text
-            print(f"Alert text: {alert_text}")
+            logs.info(f"Alert text: {alert_text}")
             if "Page name is already exists." in alert_text:
-                print(f"Page name '{page_name}' already exists. Please choose a different name.")
+                logs.warning(f"Page name '{page_name}' already exists. Please choose a different name.")
                 return page_name  # Return the page name for further use if needed
         except:
             pass  # No alert found, continue
         return page_name  # Return the page name for further use if needed
 
     except Exception as e:
-        print(f"Error creating page: {e}")
+        logs.error(f"Error creating page: {e}")
 
         return None  # Return None to indicate failure

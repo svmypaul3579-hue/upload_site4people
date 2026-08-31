@@ -1,3 +1,4 @@
+import logs
 # pyrefly: ignore [missing-import]
 from selenium import webdriver
 # pyrefly: ignore [missing-import]
@@ -23,6 +24,7 @@ def fill(driver, id, value):
 
 
 def login(driver, username, password):
+    logs.info(f"Executing login steps for {username}")
     wait = WebDriverWait(driver, 10)
     driver.get("https://site4people.com/welcome")
     wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
@@ -38,6 +40,7 @@ def login(driver, username, password):
 
 def logout(driver):
     current_url = driver.current_url
+    logs.info(f"Logging out from current URL: {current_url}")
 
     if current_url.startswith("https://site4people.com/"):
         parsed_url = urlparse(current_url)
@@ -53,5 +56,6 @@ def logout(driver):
     ))
     
     driver.get(new_url)
+    logs.success("Logout command executed successfully.")
         
 # login()

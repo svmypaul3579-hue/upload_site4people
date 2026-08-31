@@ -1,5 +1,6 @@
 import csv
 import gspread
+import logs
 
 # 1. Authenticate using your credentials
 gc = gspread.service_account(filename="credentials.json")
@@ -24,4 +25,4 @@ with open(csv_filename, mode="w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
     writer.writerows(all_values)
 
-print(f"Successfully downloaded and saved to {csv_filename}!")
+logs.success(f"Successfully downloaded and saved to {csv_filename}!")

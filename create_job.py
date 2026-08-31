@@ -1,3 +1,4 @@
+import logs
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -101,7 +102,7 @@ def wait_for_page_load(driver, timeout=30):
         return True
 
     except Exception as e:
-        print(f"Page load check failed: {e}")
+        logs.error(f"Page load check failed: {e}")
         return False
 
 def select_category(driver, id, value):
@@ -242,9 +243,9 @@ def create_job(driver, page_id, job_type, job_title, location, job_area, job_sta
                 )
             )
 
-            print("Result found:", text)
+            logs.info(f"Result found: {text}")
 
         except Exception:
-            print("No text found within 5 seconds. Continuing...")
+            logs.warning("No text found within 5 seconds. Continuing...")
     except Exception as e:
-        print(f"An error occurred while creating the job: {e}")
+        logs.error(f"An error occurred while creating the job: {e}")
