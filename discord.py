@@ -42,9 +42,9 @@ def send_discord_message(message, file_paths=None):
             f.close()
 
 
-send_discord_message(
-    "Candidate documents 📎",
-    [
-        r"selenium_error_1788080085.png",
-    ]
-)
+# send_discord_message(
+#     "Candidate documents 📎",
+#     [
+#         r"selenium_error_1788080085.png",
+#     ]
+# )
