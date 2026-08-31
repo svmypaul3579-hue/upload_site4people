@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from datetime import datetime, timedelta
 import random
 import uuid
-from chat import send_message
+from discord import send_discord_message
 
 
 def handle_selenium_error(driver, exception, context_msg):
@@ -37,7 +37,7 @@ def handle_selenium_error(driver, exception, context_msg):
         f"Context: {context_msg}\n"
         f"Error: {type(exception).__name__}: {exception}"
     )
-    send_message(phone_number="+917679735335", message=msg, file_path=screenshot_path)
+    send_discord_message(msg, file_paths=[screenshot_path] if screenshot_path else None)
 
 
 leads_df = pd.read_csv("downloaded_sheet.csv", dtype=object)
@@ -195,17 +195,18 @@ try:
             })
         time.sleep(5)
         try:
-            print(f"Attempting to log in with username: {username}")
+            if save_df.loc[save_df['username'] == username, 'page_name'].empty or save_df.loc[save_df['username'] == username, 'page_name'].iloc[0] is None:
+                print(f"Page name is empty for username: {username}. Proceeding to create page.")
+                
+                print(f"Attempting to log in with username: {username}")
 
-            login(driver, username, password)
+                login(driver, username, password)
 
-            modify_csv_data("data.csv", row_id=index, new_row_data={'is_login': True})
-            print(f"Login successful for username: {username}")
-            time.sleep(5)
-            # create page
-            row = save_df.loc[save_df['username'] == username, 'page_name']
+                modify_csv_data("data.csv", row_id=index, new_row_data={'is_login': True})
+                print(f"Login successful for username: {username}")
+                time.sleep(5)
+                # create page
 
-            if row.empty or row.iloc[0] is None or pd.isna(row.iloc[0]):
                 page_title = f"{company_name} Careers"
                 page_category = "Other"
                 index_id = save_df.index[save_df['username'] == username].tolist()[0]
@@ -217,6 +218,7 @@ try:
                     print(f"Page created successfully: {page_name}")
                     page_id = f"https://site4people.com/{page_name}"
                     modify_csv_data("data.csv", row_id=index_id, new_row_data={'page_name': page_name, 'page_id': page_id, 'is_page_created': True})
+                    logout(driver)
                 except Exception as e:
                     print(f"Error updating CSV data for username: {username}. Error: {e}")
                     handle_selenium_error(driver, e, f"Page creation failed for username: {username}")
@@ -226,7 +228,7 @@ try:
             handle_selenium_error(driver, e, f"Login failed for username: {username}")
         time.sleep(5)
         # input("Press enter to logout...")
-        logout(driver)
+        # logout(driver)
         # break  # Remove this break to process all rows
 except Exception as e:
     handle_selenium_error(driver, e, "Unhandled crash/error in app.py script")
