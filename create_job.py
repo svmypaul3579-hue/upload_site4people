@@ -1,3 +1,4 @@
+
 import logs
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -81,6 +82,7 @@ job_fow_options = {
 }
 
 def wait_for_page_load(driver, timeout=30):
+    logs.debug("Waiting for page load completion...")
     try:
         wait = WebDriverWait(driver, timeout)
 
@@ -99,6 +101,7 @@ def wait_for_page_load(driver, timeout=30):
         )
 
         # All checks passed
+        logs.debug("Page load checks passed successfully.")
         return True
 
     except Exception as e:
@@ -110,12 +113,12 @@ def select_category(driver, id, value):
         driver.find_element(By.ID, id)
     )
 
-    dropdown.select_by_value(value)
+    dropdown.select_by_value(str(value))
 
 def fill(driver, id, value):
         element = driver.find_element(By.ID, id)
         element.clear()
-        element.send_keys(value)
+        element.send_keys(str(value))
 
 # driver = webdriver.Chrome()
 # driver.maximize_window()
@@ -139,113 +142,264 @@ def fill(driver, id, value):
 # job_skill_level = 'Intermediate'
 # field_of_work = "Daily Work"
 # description = "job description we are hiring, hurry up"
-def create_job(driver, page_id, job_type, job_title, location, job_area, job_state, max_salary, min_salary, salary_interval, job_exp_from, job_exp_to, job_skill_category, designation_name, job_skill_level, field_of_work, description):
 
+def create_job(driver, page_url, job_type, job_title, location, job_area, job_state, max_salary, min_salary, salary_interval, job_exp_from, job_exp_to, skills, job_skill_category, designation_name, job_skill_level, field_of_work, description):
+    logs.highlight(f"Starting job creation: '{job_title}' on {page_url}")
+    logs.info(
+        f"Job parameters -> Type: {job_type}, Work Mode: {location}, Area: {job_area}, State: {job_state}, "
+        f"Salary: {min_salary}-{max_salary}/{salary_interval}, Exp: {job_exp_from}-{job_exp_to} yrs, "
+        f"Category: {job_skill_category}, Designation: {designation_name}, Level: {job_skill_level}, "
+        f"Field of Work: {field_of_work}, Skills: {skills}"
+    )
     try:
-        driver.get(f"https://site4people.com/{page_id}")
+        logs.info(f"Navigating to page URL: {page_url}")
+        driver.get(f"{page_url}")
 
+        logs.info("Executing OpenCreateJobModal()...")
         driver.execute_script("OpenCreateJobModal();")
 
         time.sleep(2)
         # job type
-        select_category(driver, 'job_type', jobType[job_type])
+        try:
+            val = jobType.get(job_type, job_type)
+            select_category(driver, 'job_type', val)
+            logs.debug(f"Selected job type: {job_type} ({val})")
+        except KeyError:
+            logs.error(f"Invalid job type: {job_type}")
+        except Exception as e:
+            logs.error(f"Error selecting job type '{job_type}': {e}")
+
         # job title
-        fill(driver, 'job_title', job_title)
+        try:
+            fill(driver, 'job_title', job_title)
+            logs.debug(f"Filled job title: '{job_title}'")
+        except Exception as e:
+            logs.error(f"Error filling job title: {e}")
 
         # work modes 
-        workModes = Select(
-            driver.find_element(By.XPATH, '//*[@id="normal-job-fields"]/div[1]/div[2]/div/select')
-        )
+        try:
+            work_mode_val = work_modes.get(location, location)
+            workModes = Select(
+                driver.find_element(By.XPATH, '//*[@id="normal-job-fields"]/div[1]/div[2]/div/select')
+            )
 
-        workModes.select_by_value(work_modes[location])
-
+            workModes.select_by_value(work_mode_val)
+            logs.debug(f"Selected work mode: {location} ({work_mode_val})")
+        except Exception as e: 
+            logs.error(f"Invalid work mode: {location}. Error: {e}")
+        
+        time.sleep(2)
         # job area
-        fill(driver, 'job_area', job_area)
+        try:
+            fill(driver, 'job_area', job_area)
+            logs.debug(f"Filled job area: '{job_area}'")
+        except Exception as e:
+            logs.error(f"Error filling job area: {e}")
 
         # job state
-        select_category(driver, 'cjob_state', state_ids[job_state])
+        try:
+            state_val = state_ids.get(job_state, job_state)
+            select_category(driver, 'cjob_state', state_val)
+            logs.debug(f"Selected job state: {job_state} ({state_val})")
+        except Exception as e:
+            logs.error(f"Invalid job state: {job_state}. Error: {e}")
 
         time.sleep(2)
         # job city
-        select_category(driver, 'cjob_city_autocomplete', '141916')
+        try:
+            select_category(driver, 'cjob_city_autocomplete', '141916')
+            logs.debug("Selected job city (141916)")
+        except Exception as e:
+            logs.error(f"Error selecting job city: {e}")
 
         # salary
-        fill(driver, 'minimum', max_salary)
-        fill(driver, 'maximum', min_salary)
+        try:
+            fill(driver, 'minimum', max_salary)
+            fill(driver, 'maximum', min_salary)
+            logs.debug(f"Filled salary fields: minimum={max_salary}, maximum={min_salary}")
+        except Exception as e:
+            logs.error(f"Error filling salary fields: {e}")
 
         # salary period
-        select_category(driver, 'salary_date', salary_period[salary_interval])
+        try:
+            salary_interval_val = salary_period.get(salary_interval, salary_interval)
+            select_category(driver, 'salary_date', salary_interval_val)
+            logs.debug(f"Selected salary interval: {salary_interval} ({salary_interval_val})")
+        except Exception as e:
+            logs.error(f"Invalid salary interval: {salary_interval}. Error: {e}")
 
         #exprience
+        try:
+            # Convert empty values to None
+            job_exp_from = None if job_exp_from in [None, ""] else int(job_exp_from)
+            job_exp_to = None if job_exp_to in [None, ""] else int(job_exp_to)
 
-        fill(driver, 'job_exp_from', job_exp_from)
-        fill(driver, 'job_exp_to', job_exp_to)
+            # Both values are missing
+            if job_exp_from is None and job_exp_to is None:
+                job_exp_from = 0
+                job_exp_to = 1
+
+            # From is missing, To exists
+            elif job_exp_from is None:
+                job_exp_from = 0
+                # Ensure job_exp_to is greater than job_exp_from
+                if job_exp_to <= job_exp_from:
+                    job_exp_to = job_exp_from + 1
+
+            # To is missing, From exists
+            elif job_exp_to is None:
+                job_exp_to = job_exp_from + 1
+
+            # Both exist but To is less than or equal to From
+            elif job_exp_to <= job_exp_from:
+                logs.warning(
+                    f"job_exp_to ({job_exp_to}) is less than or equal to "
+                    f"job_exp_from ({job_exp_from}). "
+                    f"Adjusting job_exp_to to {job_exp_from + 1}."
+                )
+                job_exp_to = job_exp_from + 1
+
+            fill(driver, 'job_exp_from', job_exp_from)
+            fill(driver, 'job_exp_to', job_exp_to)
+            logs.debug(f"Filled experience: from {job_exp_from} to {job_exp_to}")
+
+        except Exception as e:
+            logs.error(f"Error filling experience fields: {e}")
 
         # job skill category
-        select_category(driver, 'job_skill_category', job_skill_category)
+        try:
+            select_category(driver, 'job_skill_category', str(job_skill_category))
+            logs.debug(f"Selected job skill category: {job_skill_category}")
+        except Exception as e:
+            logs.error(f"Invalid job skill category: {job_skill_category}. Error: {e}")
 
         # job skills
-        skills = ["Content Writing", "Journalism", "Copywriting"]
+        try:
+            logs.info(f"Adding {len(skills)} skills: {skills}")
+            added_skills_count = 0
+            for skill in skills:
+                skill_name = str(skill).strip()
+                if not skill_name:
+                    continue
+                job_skills = driver.find_element(
+                    By.CSS_SELECTOR,
+                    "#job_skills + span .select2-search__field"
+                )
 
-        for skill in skills:
-            job_skills = driver.find_element(
-                By.CSS_SELECTOR,
-                "#job_skills + span .select2-search__field"
+                job_skills.click()
+                job_skills.send_keys(skill_name)
+                time.sleep(0.5)
+                job_skills.send_keys(Keys.ENTER)
+                time.sleep(0.5)  # Wait for the skill to be added before proceeding to the next one
+                added_skills_count += 1
+            logs.debug(f"Added {added_skills_count} skill tags.")
+        except Exception as e:
+            logs.error(f"Error selecting job skills: {e}")
+
+        # designation
+        try:       
+            designation = Select(
+                driver.find_element(By.XPATH, '//*[@id="normal-job-fields"]/div[7]/div/div/select')
             )
 
-            job_skills.click()
-            job_skills.send_keys(skill)
-            time.sleep(0.5)
-            job_skills.send_keys(Keys.ENTER)
-            
-        designation = Select(
-            driver.find_element(By.XPATH, '//*[@id="normal-job-fields"]/div[7]/div/div/select')
-        )
-
-        designation.select_by_value(designation_name)
+            designation.select_by_value(str(designation_name))
+            logs.debug(f"Selected designation: {designation_name}")
+        except Exception as e:
+            logs.error(f"Error selecting job designation: {e}")
 
         # job skill level
-        select_category(driver, 'job_skill_level', jobSkillLevel[job_skill_level])
+        try:
+            skill_level_val = jobSkillLevel.get(job_skill_level, job_skill_level)
+            select_category(driver, 'job_skill_level', skill_level_val)
+            logs.debug(f"Selected job skill level: {job_skill_level} ({skill_level_val})")
+        except Exception as e:
+            logs.error(f"Invalid job skill level: {job_skill_level}. Error: {e}")
 
         # field of work
-        job_fow = Select(driver.find_element(By.ID, "job_fow"))
-
-        if field_of_work in job_fow_options:
-            job_fow.select_by_value(job_fow_options[field_of_work])
-        else:
-            driver.find_element(By.ID, "job_fow_cst_btn").click()
-
-            job_fow_other = WebDriverWait(driver, 10).until(
-                EC.visibility_of_element_located((By.ID, "job_fow_other"))
-            )
-
-            job_fow_other.clear()
-            job_fow_other.send_keys(field_of_work)
+        try:
+            job_fow = Select(driver.find_element(By.ID, "job_fow"))
+            job_fow.select_by_value("4")
+            logs.debug("Selected field of work: 4 (IT)")
+        except Exception as e:
+            logs.error(f"Error selecting field of work: {e}")
             
         # job description
-        driver.switch_to.active_element.send_keys(Keys.TAB)
-        driver.switch_to.active_element.send_keys(description)
+        try:
+            # driver.switch_to.active_element.send_keys(Keys.TAB)
+            # time.sleep(2)
+            # driver.switch_to.active_element.send_keys(Keys.TAB)
+            # driver.switch_to.active_element.send_keys(description)
+            
+            xpath = '/html/body/div[3]/div[2]/div[5]/div/div/form/div[1]/div[1]/div[4]/div[9]/textarea'
+
+            textarea = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, xpath))
+            )
+
+            textarea.click()
+            textarea.clear()
+            textarea.send_keys(description)
+            logs.debug(f"Filled job description ({len(description) if description else 0} characters).")
+        except Exception as e:
+            logs.error(f"Error filling job description in active element: {e}")
 
         time.sleep(2)
         # final submit
+        try:
+            driver.find_element(By.XPATH, '/html/body/div[1]/div/a').click()
+            logs.debug("Dismissed banner/overlay link.")
+        except Exception:
+            pass
+        # input("Press Enter to submit the job form...")  # Wait for user input before submitting
+        
+        logs.info("Submitting job creation form...")
+        try:
+            button = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="createJOnfrm"]/div[2]/button')
+                )
+            )
+            button.click()
+            logs.info("Clicked submit button.")
+        except Exception as e:
+            logs.error(f"Button not found or click failed: {e}")
+        # time.sleep(10)  # Wait for the page to process the submission
 
-        driver.find_element(By.XPATH, '//*[@id="createJOnfrm"]/div[2]/button').click()
-
+        logs.info("Waiting for page ready state after submit...")
+        wait = WebDriverWait(driver, 30)
+        try:
+            wait.until(
+                lambda d: d.execute_script(
+                    "return document.readyState"
+                ) == "complete"
+            )
+        except Exception as e:
+            logs.warning(f"ReadyState check encountered timeout or exception: {e}")
 
         try:
-            text = WebDriverWait(driver, 5).until(
+            logs.info("Checking for creation confirmation text...")
+            text = WebDriverWait(driver, 30).until(
                 lambda d: (
                     d.find_element(
                         By.XPATH,
-                        '//*[@id="createJOnfrm"]/div[1]/div[1]/div[1]'
+                        '//*[@id="createJOnfrm"]/div[1]/div[1]/div[1]/div'
                     ).text.strip()
                     or False
                 )
             )
 
             logs.info(f"Result found: {text}")
+            if 'Job request successfully created.' in text:
+                logs.success(f"Job request successfully created: '{job_title}'")
+                return True
+            else:
+                logs.error(f"Unexpected result text: {text}")
+                return False
 
-        except Exception:
-            logs.warning("No text found within 5 seconds. Continuing...")
+        except Exception as e:
+            logs.warning(f"No result confirmation text found within timeout: {e}. Continuing...")
+            return False
     except Exception as e:
-        logs.error(f"An error occurred while creating the job: {e}")
+        logs.error(f"An error occurred while creating the job '{job_title}': {e}")
+        logs.print_traceback()
+        return False
